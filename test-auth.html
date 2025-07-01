@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Auth</title>
+</head>
+<body>
+    <h1>Teste de Autenticação</h1>
+    <button onclick="login()">Fazer Login</button>
+    <button onclick="checkAuth()">Verificar Auth</button>
+    <button onclick="clearAuth()">Limpar Auth</button>
+    <div id="result"></div>
+    
+    <script>
+        function login() {
+            localStorage.setItem('isAuthenticated', 'true');
+            document.getElementById('result').innerHTML = 'Login realizado!';
+        }
+        
+        function checkAuth() {
+            const auth = localStorage.getItem('isAuthenticated');
+            document.getElementById('result').innerHTML = 'Auth status: ' + auth;
+        }
+        
+        function clearAuth() {
+            localStorage.removeItem('isAuthenticated');
+            document.getElementById('result').innerHTML = 'Auth limpo!';
+        }
+    </script>
+</body>
+</html>
