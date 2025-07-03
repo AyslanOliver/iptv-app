@@ -39,7 +39,7 @@ const Home: React.FC = () => {
     <Container maxWidth="lg">
       <Box sx={{ mt: 4, mb: 4 }}>
         <Typography variant="h3" component="h1" gutterBottom align="center">
-          Bem-vindo ao Stream Player
+          Bem-vindo ao Zeus Player
         </Typography>
         <Typography variant="h6" component="p" gutterBottom align="center" color="text.secondary">
           Escolha uma opção para começar

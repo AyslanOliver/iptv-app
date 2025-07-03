@@ -30,15 +30,6 @@ export const validateCredentials = async (credentials: IptvCredentials): Promise
   }
 };
 
-
-
-
-
-
-
-
-
-
 // Função para buscar dados EPG do zed7.top
 export const getEpgData = async (credentials: IptvCredentials): Promise<any> => {
   try {
