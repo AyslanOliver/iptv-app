@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getEpgData, generateCatchupUrl, formatToXmltvUtc } from '../services/iptvService';
-import IptvPlayer from '../components/IptvPlayer/IptvPlayer';
+import IptvPlayer from '../components/IptvPlayer';
 import '../styles/LiveTV.css';
 
 interface Channel {
@@ -49,9 +49,16 @@ const LiveTV: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoadingEpg, setIsLoadingEpg] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const channelsPerPage = 20;
   
   // Estados do player
   const [currentStreamUrl, setCurrentStreamUrl] = useState<string>('');
+
+  // Reset da paginação quando mudar categoria ou busca
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, searchTerm]);
 
   // Função para formatar horários EPG
   const formatEpgTime = (timestamp: number): string => {
@@ -266,6 +273,20 @@ const LiveTV: React.FC = () => {
     return filtered;
   };
 
+  const paginatedChannels = () => {
+    const filtered = filteredChannels();
+    const startIndex = (currentPage - 1) * channelsPerPage;
+    return filtered.slice(startIndex, startIndex + channelsPerPage);
+  };
+
+  const totalPages = Math.ceil(filteredChannels().length / channelsPerPage);
+
+  const loadMoreChannels = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
   if (loading) {
     return (
       <div className="livetv-container">
@@ -360,7 +381,7 @@ const LiveTV: React.FC = () => {
           </div>
 
           <div className="channels-grid">
-            {filteredChannels().map(channel => (
+            {paginatedChannels().map(channel => (
               <div
                 key={channel.stream_id}
                 className={`channel-card ${selectedChannel?.stream_id === channel.stream_id ? 'selected' : ''}`}
@@ -444,20 +465,34 @@ const LiveTV: React.FC = () => {
               </div>
             ))}
           </div>
+
+          {currentPage < totalPages && (
+            <div className="load-more">
+              <button onClick={loadMoreChannels} className="load-more-button">
+                Carregar mais canais
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Player IPTV */}
-      {selectedChannel && (
-        <IptvPlayer
-          streamUrl={currentStreamUrl}
-          channel={selectedChannel}
-          channels={filteredChannels()}
-          autoPlay={true}
-          onError={(error: string) => setError(error)}
-          onChannelChange={handleChannelSelect}
-        />
-      )}
+      <div className="player-area">
+        {selectedChannel && currentStreamUrl ? (
+          <IptvPlayer
+            streamUrl={currentStreamUrl}
+            channel={selectedChannel}
+            channels={filteredChannels()}
+            autoPlay={true}
+            onError={(error: string) => setError(error)}
+            onChannelChange={handleChannelSelect}
+          />
+        ) : (
+          <div className="player-placeholder">
+            <p>Selecione um canal para começar a assistir</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -20,6 +20,20 @@ const ListContainer = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   maxHeight: 'calc(100vh - 100px)',
   overflowY: 'auto',
+  '&::-webkit-scrollbar': {
+    width: '8px',
+  },
+  '&::-webkit-scrollbar-track': {
+    background: theme.palette.background.default,
+    borderRadius: '4px',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: theme.palette.primary.main,
+    borderRadius: '4px',
+    '&:hover': {
+      background: theme.palette.primary.dark,
+    },
+  },
 }));
 
 const StyledListItem = styled(ListItem)<{ selected?: boolean }>(({ theme, selected }) => ({

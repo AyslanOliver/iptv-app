@@ -1,7 +1,7 @@
 .livetv-container {
   display: grid;
-  grid-template-columns: 260px 1fr;
-  grid-template-areas: "sidebar main";
+  grid-template-columns: 260px 1fr 640px;
+  grid-template-areas: "sidebar main player";
   height: 100vh;
   background: linear-gradient(180deg, rgba(17, 24, 39, 1), rgba(17, 24, 39, 0.95));
   color: #fff;
@@ -38,6 +38,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
 }
 
 .category-sidebar-item {
@@ -66,16 +68,28 @@
 
 .main-content {
   grid-area: main;
-  padding: 1.5rem;
+  padding: 4rem 1.5rem 1.5rem;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   border-left: 1px solid rgba(99, 102, 241, 0.1);
-  margin-right: 640px;
 }
 
-
+.player-area {
+  grid-area: player;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 640px;
+  height: 100vh;
+  background: rgba(17, 24, 39, 0.95);
+  border-left: 1px solid rgba(99, 102, 241, 0.1);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 
 .player-placeholder {
   width: 100%;
@@ -167,15 +181,15 @@
 
 .channels-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1rem;
-  padding: 0.5rem;
+  padding: 1rem;
+  max-height: calc(100vh - 200px);
   overflow-y: auto;
-  max-height: calc(100vh - 180px);
 }
 
 .channel-card {
-  background: rgba(26, 27, 38, 0.6);
+  background: rgba(17, 24, 39, 0.6);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(99, 102, 241, 0.1);
   border-radius: 1rem;
@@ -297,21 +311,6 @@
   transform: scale(1.1);
 }
 
-.player-section {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80vw;
-  height: 80vh;
-  max-width: 1200px;
-  background: rgba(0, 0, 0, 0.95);
-  border-radius: 1rem;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-}
-
 .loading,
 .error {
   display: flex;
@@ -356,18 +355,49 @@
 
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(26, 27, 38, 0.6);
+  background: rgba(26, 27, 38, 0.8);
+  border-radius: 8px;
+  margin: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.3);
-  border-radius: 4px;
+  background: linear-gradient(45deg, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8));
+  border-radius: 8px;
+  border: 2px solid rgba(26, 27, 38, 0.8);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.5);
+  background: linear-gradient(45deg, rgba(99, 102, 241, 1), rgba(139, 92, 246, 1));
+  cursor: pointer;
+}
+
+.load-more {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.load-more-button {
+  background: rgba(99, 102, 241, 0.1);
+  color: #fff;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.load-more-button:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.load-more-button:active {
+  transform: translateY(1px);
 }
