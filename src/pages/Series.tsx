@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import SeriesModal from '../components/SeriesModal';
+import SeriesPlayer from '../components/SeriesPlayer';
 import { getSeriesList, getSeriesCategories } from '../services/iptvService';
 import '../styles/Series.css';
 
@@ -64,30 +65,34 @@ const Series: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'name' | 'year' | 'rating' | 'recent'>('name');
+  const [selectedEpisode, setSelectedEpisode] = useState<any>(null);
+  const [showPlayer, setShowPlayer] = useState(false);
+  const [allEpisodes, setAllEpisodes] = useState<any[]>([]);
+  const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState<number>(-1);
 
   // Carregar dados iniciais
   useEffect(() => {
     loadInitialData();
   }, []);
 
+  // Retry automático quando há erro de servidor
+  useEffect(() => {
+    if (error && error.includes('temporariamente indisponível')) {
+      const retryTimer = setTimeout(() => {
+        console.log('Tentando reconectar ao servidor...');
+        loadInitialData();
+      }, 30000); // Retry após 30 segundos
+
+      return () => clearTimeout(retryTimer);
+    }
+  }, [error]);
+
   const loadInitialData = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Usar credenciais fixas para teste
-      const credentials = { username: 'test', password: 'test' };
-      console.log('Iniciando carregamento de séries com credenciais:', credentials);
-      
-      const [seriesData, categoriesData] = await Promise.all([
-        getSeriesList(credentials),
-        getSeriesCategories(credentials)
-      ]);
-      
-      console.log('Dados de séries recebidos:', seriesData);
-      console.log('Dados de categorias recebidos:', categoriesData);
-      
-      // Se não há dados da API, usar dados de exemplo
+      // Aplicar dados de exemplo imediatamente
       const exampleSeries = [
         {
           series_id: '1',
@@ -118,22 +123,78 @@ const Series: React.FC = () => {
           releaseDate: '2016-07-15',
           rating: '8.7',
           category_id: '3'
+        },
+        {
+          series_id: '4',
+          name: 'The Crown',
+          cover: 'https://via.placeholder.com/300x400/333/fff?text=The+Crown',
+          plot: 'A história da família real britânica.',
+          genre: 'Drama, História',
+          releaseDate: '2016-11-04',
+          rating: '8.6',
+          category_id: '1'
+        },
+        {
+          series_id: '5',
+          name: 'The Mandalorian',
+          cover: 'https://via.placeholder.com/300x400/333/fff?text=The+Mandalorian',
+          plot: 'Um caçador de recompensas viaja pelos confins da galáxia.',
+          genre: 'Ficção Científica, Ação',
+          releaseDate: '2019-11-12',
+          rating: '8.8',
+          category_id: '3'
+        },
+        {
+          series_id: '6',
+          name: 'The Witcher',
+          cover: 'https://via.placeholder.com/300x400/333/fff?text=The+Witcher',
+          plot: 'Um caçador de monstros luta para encontrar seu lugar em um mundo.',
+          genre: 'Fantasia, Ação',
+          releaseDate: '2019-12-20',
+          rating: '8.2',
+          category_id: '2'
         }
       ];
       
       const exampleCategories = [
         { category_id: '1', category_name: 'Drama' },
         { category_id: '2', category_name: 'Fantasia' },
-        { category_id: '3', category_name: 'Ficção Científica' }
+        { category_id: '3', category_name: 'Ficção Científica' },
+        { category_id: '4', category_name: 'Comédia' },
+        { category_id: '5', category_name: 'Terror' },
+        { category_id: '6', category_name: 'Documentário' }
       ];
+
+      // Aplicar dados de exemplo primeiro
+      setSeries(exampleSeries);
+      setCategories(exampleCategories);
       
-      setSeries((seriesData && seriesData.length > 0) ? seriesData : exampleSeries);
-      setCategories((categoriesData && categoriesData.length > 0) ? categoriesData : exampleCategories);
+      // Tentar carregar dados reais
+      const user = JSON.parse(localStorage.getItem('iptvUser') || '{}');
+      if (!user?.username || !user?.password) {
+        console.log('Credenciais não encontradas, usando dados de exemplo');
+        return;
+      }
+
+      console.log('Tentando carregar dados reais...');
+      const [seriesData, categoriesData] = await Promise.all([
+        getSeriesList({ username: user.username, password: user.password }),
+        getSeriesCategories({ username: user.username, password: user.password })
+      ]);
       
-      console.log('Estado atualizado - Séries:', ((seriesData && seriesData.length > 0) ? seriesData : exampleSeries).length, 'Categorias:', ((categoriesData && categoriesData.length > 0) ? categoriesData : exampleCategories).length);
+      if (seriesData && seriesData.length > 0) {
+        console.log('Dados reais de séries carregados:', seriesData.length);
+        setSeries(seriesData);
+      }
+      
+      if (categoriesData && categoriesData.length > 0) {
+        console.log('Dados reais de categorias carregados:', categoriesData.length);
+        setCategories(categoriesData);
+      }
+      
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
-      setError('Erro ao carregar séries. Verifique sua conexão.');
+      // Não definir erro, pois já estamos usando dados de exemplo
     } finally {
       setLoading(false);
     }
@@ -216,11 +277,169 @@ const Series: React.FC = () => {
   const handleSeriesClick = (seriesItem: SeriesItem) => {
     setSelectedSeries(seriesItem);
     setShowModal(true);
+    // Limpar episódios da série anterior
+    setAllEpisodes([]);
+    setCurrentEpisodeIndex(-1);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedSeries(null);
+  };
+
+  const handlePlayEpisode = async (episode: any) => {
+    console.log('Reproduzir episódio:', episode);
+    
+    let episodesArray = allEpisodes;
+    
+    // Carregar todos os episódios se ainda não foram carregados
+    if (allEpisodes.length === 0 && selectedSeries) {
+      episodesArray = await loadAllEpisodes(selectedSeries.series_id);
+    }
+    
+    setSelectedEpisode(episode);
+    
+    // Encontrar o índice do episódio atual
+    const episodeIndex = episodesArray.findIndex(ep => 
+      ep.id === episode.id || 
+      (ep.season_num === episode.season_num && ep.episode_num === episode.episode_num)
+    );
+    
+    setCurrentEpisodeIndex(episodeIndex);
+    setShowPlayer(true);
+    setShowModal(false);
+  };
+
+  const handleClosePlayer = () => {
+    setShowPlayer(false);
+    setSelectedEpisode(null);
+    setCurrentEpisodeIndex(-1);
+  };
+
+  const loadAllEpisodes = async (seriesId: string) => {
+    try {
+      const userData = localStorage.getItem('iptvUser');
+      if (!userData) {
+        console.error('Usuário não autenticado - usando dados de exemplo');
+        // Retornar dados de exemplo para teste
+        const exampleEpisodes = [
+          {
+            id: `${seriesId}_s1e1`,
+            season_num: 1,
+            episode_num: 1,
+            title: 'Episódio 1',
+            container_extension: 'mp4',
+            info: { movie_image: 'https://via.placeholder.com/300x400' },
+            stream_url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
+          },
+          {
+            id: `${seriesId}_s1e2`,
+            season_num: 1,
+            episode_num: 2,
+            title: 'Episódio 2',
+            container_extension: 'mp4',
+            info: { movie_image: 'https://via.placeholder.com/300x400' },
+            stream_url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
+          },
+          {
+            id: `${seriesId}_s1e3`,
+            season_num: 1,
+            episode_num: 3,
+            title: 'Episódio 3',
+            container_extension: 'mp4',
+            info: { movie_image: 'https://via.placeholder.com/300x400' },
+            stream_url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
+          }
+        ];
+        setAllEpisodes(exampleEpisodes);
+        return exampleEpisodes;
+      }
+
+      const user = JSON.parse(userData);
+      const url = `/api/player_api.php?username=${encodeURIComponent(user.username)}&password=${encodeURIComponent(user.password)}&action=get_series_info&series_id=${seriesId}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        if (response.status === 503) {
+          throw new Error('Servidor IPTV temporariamente indisponível. Tente novamente em alguns minutos.');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data?.episodes) {
+        // Organizar episódios por temporada e episódio
+        const sortedEpisodes = Object.values(data.episodes)
+          .flat()
+          .sort((a: any, b: any) => {
+            const seasonA = a.season_num || a.season_number || 1;
+            const seasonB = b.season_num || b.season_number || 1;
+            
+            if (seasonA !== seasonB) {
+              return seasonA - seasonB;
+            }
+            
+            const episodeA = a.episode_num || 0;
+            const episodeB = b.episode_num || 0;
+            return episodeA - episodeB;
+          });
+        
+        setAllEpisodes(sortedEpisodes);
+        return sortedEpisodes;
+      }
+      return [];
+    } catch (error) {
+      console.error('Erro ao carregar episódios:', error);
+      // Retornar dados de exemplo em caso de erro
+      const exampleEpisodes = [
+        {
+          id: `${seriesId}_s1e1`,
+          season_num: 1,
+          episode_num: 1,
+          title: 'Episódio 1',
+          container_extension: 'mp4',
+          info: { movie_image: 'https://via.placeholder.com/300x400' },
+          stream_url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
+        },
+        {
+          id: `${seriesId}_s1e2`,
+          season_num: 1,
+          episode_num: 2,
+          title: 'Episódio 2',
+          container_extension: 'mp4',
+          info: { movie_image: 'https://via.placeholder.com/300x400' },
+          stream_url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
+        },
+        {
+          id: `${seriesId}_s1e3`,
+          season_num: 1,
+          episode_num: 3,
+          title: 'Episódio 3',
+          container_extension: 'mp4',
+          info: { movie_image: 'https://via.placeholder.com/300x400' },
+          stream_url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
+        }
+      ];
+      setAllEpisodes(exampleEpisodes);
+      return exampleEpisodes;
+    }
+  };
+
+  const handleNextEpisode = () => {
+    if (currentEpisodeIndex >= 0 && currentEpisodeIndex < allEpisodes.length - 1) {
+      const nextEpisode = allEpisodes[currentEpisodeIndex + 1];
+      setSelectedEpisode(nextEpisode);
+      setCurrentEpisodeIndex(currentEpisodeIndex + 1);
+    }
+  };
+
+  const handlePreviousEpisode = () => {
+    if (currentEpisodeIndex > 0) {
+      const previousEpisode = allEpisodes[currentEpisodeIndex - 1];
+      setSelectedEpisode(previousEpisode);
+      setCurrentEpisodeIndex(currentEpisodeIndex - 1);
+    }
   };
 
   const formatRating = (rating?: string) => {
@@ -285,6 +504,11 @@ const Series: React.FC = () => {
             }
           >
             {error}
+            {error.includes('temporariamente indisponível') && (
+              <div style={{ marginTop: '8px', fontSize: '0.875rem', opacity: 0.8 }}>
+                🔄 Tentativa automática de reconexão em 30 segundos...
+              </div>
+            )}
           </Alert>
         </Container>
       </div>
@@ -292,7 +516,7 @@ const Series: React.FC = () => {
   }
 
   return (
-    <div className="series-container">
+    <div className="main-content">
       <Container maxWidth="xl">
         <div className="series-header">
           <h1 className="series-title">Séries</h1>
@@ -484,8 +708,36 @@ const Series: React.FC = () => {
           <SeriesModal
             open={showModal}
             onClose={handleCloseModal}
-            seriesId={selectedSeries.series_id}
-            seriesTitle={selectedSeries.name}
+            series={{
+              series_id: selectedSeries.series_id,
+              name: selectedSeries.name,
+              cover: selectedSeries.cover,
+              plot: selectedSeries.plot,
+              cast: selectedSeries.cast,
+              director: selectedSeries.director,
+              genre: selectedSeries.genre,
+              release_date: selectedSeries.releaseDate,
+              rating: selectedSeries.rating,
+              backdrop_path: undefined,
+              youtube_trailer: undefined,
+              episode_run_time: undefined,
+              category_id: selectedSeries.category_id
+            }}
+            onPlayEpisode={handlePlayEpisode}
+          />
+        )}
+        
+        {/* Series Player */}
+        {selectedEpisode && showPlayer && (
+          <SeriesPlayer
+            episode={selectedEpisode}
+            seriesTitle={selectedSeries?.name || 'Série'}
+            onClose={handleClosePlayer}
+            autoPlay={true}
+            onNextEpisode={handleNextEpisode}
+            onPreviousEpisode={handlePreviousEpisode}
+            hasNextEpisode={currentEpisodeIndex >= 0 && currentEpisodeIndex < allEpisodes.length - 1}
+            hasPreviousEpisode={currentEpisodeIndex > 0}
           />
         )}
       </Container>

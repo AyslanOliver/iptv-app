@@ -13,7 +13,7 @@ import {
   ArrowForward
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import './IptvPlayer.css';
+import '../styles/IptvPlayer.css';
 
 interface IptvPlayerProps {
   streamUrl: string;

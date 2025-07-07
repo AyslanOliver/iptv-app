@@ -166,11 +166,32 @@ export const getSeriesList = async (credentials: IptvCredentials): Promise<any> 
     const response = await fetch(url);
     
     if (!response.ok) {
+      if (response.status === 503) {
+        throw new Error('Servidor IPTV temporariamente indisponível. Tente novamente em alguns minutos.');
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    return data;
+    
+    // Processar e formatar os dados das séries
+    const formattedData = Array.isArray(data) ? data.map((series: any) => ({
+      series_id: series.series_id || series.id,
+      name: series.name || series.title,
+      cover: series.cover || series.poster,
+      plot: series.plot || series.description,
+      cast: series.cast,
+      director: series.director,
+      genre: series.genre,
+      releaseDate: series.releasedate || series.release_date,
+      rating: series.rating,
+      last_modified: series.last_modified,
+      category_id: series.category_id,
+      seasons_count: series.seasons_count || 0,
+      episodes_count: series.episodes_count || 0
+    })) : [];
+
+    return formattedData;
   } catch (error) {
     console.error('Error fetching series list:', error);
     return [];
@@ -185,6 +206,9 @@ export const getSeriesInfo = async (credentials: IptvCredentials, seriesId: stri
     const response = await fetch(url);
     
     if (!response.ok) {
+      if (response.status === 503) {
+        throw new Error('Servidor IPTV temporariamente indisponível. Tente novamente em alguns minutos.');
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -280,6 +304,9 @@ export const getSeriesCategories = async (credentials: IptvCredentials): Promise
     const response = await fetch(url);
     
     if (!response.ok) {
+      if (response.status === 503) {
+        throw new Error('Servidor IPTV temporariamente indisponível. Tente novamente em alguns minutos.');
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 

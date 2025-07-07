@@ -109,6 +109,24 @@ const ControlButton = styled(IconButton)({
   transition: 'all 0.2s ease',
 });
 
+const EpisodeNavButton = styled(IconButton)({
+  color: '#fff',
+  backgroundColor: 'rgba(255, 68, 68, 0.7)',
+  backdropFilter: 'blur(10px)',
+  border: '2px solid rgba(255, 68, 68, 0.8)',
+  width: '56px',
+  height: '56px',
+  '&:hover': {
+    backgroundColor: 'rgba(255, 68, 68, 0.9)',
+    transform: 'scale(1.15)',
+    boxShadow: '0 0 20px rgba(255, 68, 68, 0.5)',
+  },
+  transition: 'all 0.3s ease',
+  '& .MuiSvgIcon-root': {
+    fontSize: '1.8rem',
+  },
+});
+
 const PlayButton = styled(IconButton)({
   color: '#fff',
   backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -797,9 +815,9 @@ const SeriesPlayer: React.FC<SeriesPlayerProps> = ({
         {!isLoading && !error && !isPlaying && (
           <CenterControls visible={showControls}>
             {hasPreviousEpisode && (
-              <ControlButton onClick={onPreviousEpisode}>
+              <EpisodeNavButton onClick={onPreviousEpisode}>
                 <SkipPrevious />
-              </ControlButton>
+              </EpisodeNavButton>
             )}
             <ControlButton onClick={() => skip(-10)}>
               <Replay10 />
@@ -811,9 +829,9 @@ const SeriesPlayer: React.FC<SeriesPlayerProps> = ({
               <Forward10 />
             </ControlButton>
             {hasNextEpisode && (
-              <ControlButton onClick={onNextEpisode}>
+              <EpisodeNavButton onClick={onNextEpisode}>
                 <SkipNext />
-              </ControlButton>
+              </EpisodeNavButton>
             )}
           </CenterControls>
         )}
@@ -883,9 +901,9 @@ const SeriesPlayer: React.FC<SeriesPlayerProps> = ({
               
               {/* Episode Navigation */}
               {hasPreviousEpisode && (
-                <ControlButton onClick={onPreviousEpisode}>
+                <EpisodeNavButton onClick={onPreviousEpisode}>
                   <SkipPrevious />
-                </ControlButton>
+                </EpisodeNavButton>
               )}
               
               {/* Skip buttons */}
@@ -897,9 +915,9 @@ const SeriesPlayer: React.FC<SeriesPlayerProps> = ({
               </ControlButton>
               
               {hasNextEpisode && (
-                <ControlButton onClick={onNextEpisode}>
+                <EpisodeNavButton onClick={onNextEpisode}>
                   <SkipNext />
-                </ControlButton>
+                </EpisodeNavButton>
               )}
               
               {/* Time */}
